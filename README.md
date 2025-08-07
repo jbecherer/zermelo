@@ -43,6 +43,15 @@ Plots computed trajectories on a map.
 ### `get_waypoint(A, B, ...)`
 Computes a waypoint between A and B using the Zermelo solution.
 
+## Installation
+To use the `zermelo.py` module, ensure you have the required libraries installed. You can install them using pip:
+
+```bash
+cd zermelo
+#pip install numpy matplotlib xarray pyproj
+pip install .
+```
+
 ## Usage Example
 
 ```python

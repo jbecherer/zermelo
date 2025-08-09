@@ -1,9 +1,12 @@
+import logging
 import os
 import matplotlib.pyplot as plt
 import numpy as np
 import xarray as xr
 import pyproj
 import time
+
+logger = logging.getLogger(__name__)
 
 class Spoint:
     """
@@ -113,9 +116,9 @@ def zermelo_solution(A, B, u, v, w, start_time, dt, dalpha, dl):
 
         # test if any of the points hit the target condition
         rs = np.array([P.r for P in Ps])
-        print(f"distance to B  {np.min(rs):.3f} m")
+        logger.debug(f"distance to B  {np.min(rs):.3f} m")
         if np.any(rs < r_target):
-            print("Found points that hit the target condition")
+            logger.info("Found points that hit the target condition.")
             ind = np.argmin(rs)
             return Ps[ind].Hpos, Ps[ind].Halpha, Ps[ind].time
 
@@ -123,9 +126,7 @@ def zermelo_solution(A, B, u, v, w, start_time, dt, dalpha, dl):
         Ps = prune_tree(Ps, dl)
         # print(f"Number of points in the tree: {len(Ps)}")
 
-
-
-    return None, None, None 
+    return None
 
 
 def prune_tree(Ps, dl):
@@ -458,19 +459,21 @@ def get_waypoint(A, B, w=0.25, dt=3600*6, data_dir=""):
     Outputs:
         wp [lon, lat]: waypoint coordinates in longitude and latitude
         heading (float): heading to way point in radians
+        or
+        None if no solution is found.
     """
 
     u, v = load_velocity_field(B, data_dir)
-    X, alpha, times = zermelo_solution(A, B, u, v, w, np.datetime64('now'), dt, None, None)
-
+    solution = zermelo_solution(A, B, u, v, w, np.datetime64('now'), dt, None, None)
+    if solution is None:
+        return None
+    X, alpha, times = solution 
     # cal waypoint 
     x, y = latlon_to_gauss_krueger(A[0], A[1], B)
     r = 20000 # 20 km waypoint
     wp_complex = r * np.exp(1j * alpha[0])  # complex number for waypoint
     lon, lat = xy_to_latlon(x + wp_complex.real, y + wp_complex.imag, B)
     wp = np.array([lon, lat])
-    
-
     return wp , alpha[0]  # return waypoint and initial heading
 
 def __main__(A, B, w=0.25, dt=3600*6, dalpha=np.pi/9, dl=None):
